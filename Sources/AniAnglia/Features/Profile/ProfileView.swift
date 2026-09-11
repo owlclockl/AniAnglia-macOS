@@ -66,6 +66,7 @@ final class ProfileViewModel: ObservableObject {
 
 struct ProfileView: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var auth: AuthStore
     @StateObject private var vm = ProfileViewModel()
 
     /// (categoryId, title, accent color) — order matches what users expect on iOS.
@@ -79,16 +80,16 @@ struct ProfileView: View {
 
     var body: some View {
         Group {
-            if appState.auth.isAuthenticated {
+            if auth.isAuthenticated {
                 authenticated
             } else {
                 signInForm
             }
         }
         .navigationTitle("Профиль")
-        .task(id: appState.auth.profileId) {
-            await vm.loadCurrentProfile(api: appState.api, auth: appState.auth)
-            if appState.auth.isAuthenticated {
+        .task(id: auth.profileId) {
+            await vm.loadCurrentProfile(api: appState.api, auth: auth)
+            if auth.isAuthenticated {
                 await vm.loadBookmarkPreviews(api: appState.api)
             }
         }
@@ -139,14 +140,14 @@ struct ProfileView: View {
             VStack(spacing: 8) {
                 Button {
                     Task {
-                        await vm.loadCurrentProfile(api: appState.api, auth: appState.auth)
+                        await vm.loadCurrentProfile(api: appState.api, auth: auth)
                         await vm.loadBookmarkPreviews(api: appState.api)
                     }
                 } label: {
                     Label("Обновить", systemImage: "arrow.clockwise")
                 }
                 Button(role: .destructive) {
-                    appState.auth.signOut()
+                    auth.signOut()
                     vm.profile = nil
                     vm.previews = [:]
                 } label: {
@@ -252,7 +253,7 @@ struct ProfileView: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 320)
                     .onSubmit {
-                        Task { await vm.signIn(api: appState.api, auth: appState.auth) }
+                        Task { await vm.signIn(api: appState.api, auth: auth) }
                     }
             }
 
@@ -264,7 +265,7 @@ struct ProfileView: View {
             }
 
             Button {
-                Task { await vm.signIn(api: appState.api, auth: appState.auth) }
+                Task { await vm.signIn(api: appState.api, auth: auth) }
             } label: {
                 if vm.isWorking {
                     ProgressView().controlSize(.small)

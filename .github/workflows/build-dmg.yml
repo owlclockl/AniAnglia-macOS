@@ -2,9 +2,9 @@ name: Build DMG
 
 on:
   push:
-    branches: [ main, "devin/**" ]
+    branches: [ main, "devin/**", "arena/**" ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, "devin/**" ]
   workflow_dispatch:
 
 jobs:

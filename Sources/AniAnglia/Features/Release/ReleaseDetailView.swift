@@ -75,6 +75,7 @@ struct ReleaseDetailView: View {
     let prefetched: Release?
 
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var auth: AuthStore
     @StateObject private var vm = ReleaseDetailViewModel()
     @State private var fullscreenScreenshots: [URL]?
     @State private var fullscreenIndex: Int = 0
@@ -162,7 +163,7 @@ struct ReleaseDetailView: View {
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
-                    if appState.auth.isAuthenticated {
+                    if auth.isAuthenticated {
                         userRatingRow
                     }
                     actionsRow
@@ -257,8 +258,8 @@ struct ReleaseDetailView: View {
                 .foregroundStyle(currentLabel?.2 ?? .accentColor)
         }
         .fixedSize()
-        .disabled(vm.bookmarkPending || !appState.auth.isAuthenticated)
-        .help(appState.auth.isAuthenticated ? "Списки отслеживания" : "Войди в аккаунт во вкладке «Профиль», чтобы добавлять в закладки")
+        .disabled(vm.bookmarkPending || !auth.isAuthenticated)
+        .help(auth.isAuthenticated ? "Списки отслеживания" : "Войди в аккаунт во вкладке «Профиль», чтобы добавлять в закладки")
     }
 
     private func info(for release: Release) -> some View {

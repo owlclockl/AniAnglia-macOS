@@ -100,6 +100,7 @@ final class CommentsViewModel: ObservableObject {
 
 struct CommentsView: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var auth: AuthStore
     @StateObject private var vm: CommentsViewModel
 
     init(releaseId: Int64) {
@@ -129,7 +130,7 @@ struct CommentsView: View {
                 }
             }
 
-            if appState.auth.isAuthenticated {
+            if auth.isAuthenticated {
                 composer
             } else {
                 Text("Чтобы оставить комментарий, войди в аккаунт через кнопку «Войти» справа сверху.")
@@ -154,7 +155,7 @@ struct CommentsView: View {
                         CommentRow(
                             comment: comment,
                             currentVote: vm.currentVote(for: comment),
-                            canVote: appState.auth.isAuthenticated,
+                            canVote: auth.isAuthenticated,
                             onVote: { value in
                                 Task { await vm.vote(comment, value: value, api: appState.api) }
                             }

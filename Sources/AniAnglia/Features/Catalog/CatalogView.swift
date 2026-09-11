@@ -17,32 +17,49 @@ final class CatalogViewModel: ObservableObject {
     @Published var excludeGenres: Bool = false
 
     func reload(api: AnixartAPI) async {
-        page = 0
-        releases = []
-        await loadMore(api: api)
-    }
-
-    func loadMore(api: AnixartAPI) async {
-        if isLoading { return }
         isLoading = true
         defer { isLoading = false }
         do {
-            let resp = try await api.filter(
-                page: page,
-                sort: sort,
-                category: category,
-                status: status,
-                startYear: startYear,
-                endYear: endYear,
-                genres: Array(genres),
-                excludeGenres: excludeGenres
-            )
+            let resp = try await fetch(api: api, page: 0)
+            releases = resp.items
+            totalPages = resp.totalPageCount
+            page = 0
+            errorMessage = nil
+        } catch {
+            releases = []
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func loadMore(api: AnixartAPI) async {
+        guard !isLoading else { return }
+        isLoading = true
+        defer { isLoading = false }
+        let next = page + 1
+        do {
+            let resp = try await fetch(api: api, page: next)
             releases.append(contentsOf: resp.items)
             totalPages = resp.totalPageCount
+            // Advance the page only on success, so a failed request
+            // doesn't leave a hole in the listing.
+            page = next
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func fetch(api: AnixartAPI, page: Int) async throws -> ReleasesResponse {
+        try await api.filter(
+            page: page,
+            sort: sort,
+            category: category,
+            status: status,
+            startYear: startYear,
+            endYear: endYear,
+            genres: Array(genres),
+            excludeGenres: excludeGenres
+        )
     }
 
     func canLoadMore() -> Bool {
@@ -75,7 +92,10 @@ struct CatalogView: View {
         (2, "Анонс"),
         (3, "Онгоинг")
     ]
-    private let yearOptions: [Int] = Array(stride(from: 2026, through: 1960, by: -1))
+    private var yearOptions: [Int] {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        return Array(stride(from: currentYear, through: 1960, by: -1))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -168,7 +188,6 @@ struct CatalogView: View {
 
                 if vm.canLoadMore() {
                     Button {
-                        vm.page += 1
                         Task { await vm.loadMore(api: appState.api) }
                     } label: {
                         if vm.isLoading {

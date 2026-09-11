@@ -8,6 +8,8 @@ final class SearchViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private var currentTask: Task<Void, Never>?
+    /// Guards against out-of-order responses: only the newest request may update results.
+    private var searchEpoch = 0
 
     func searchAfterDelay(api: AnixartAPI) {
         currentTask?.cancel()
@@ -23,17 +25,22 @@ final class SearchViewModel: ObservableObject {
     func performSearch(api: AnixartAPI, query: String) async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
+            searchEpoch += 1
             results = []
             errorMessage = nil
             return
         }
+        searchEpoch += 1
+        let epoch = searchEpoch
         isLoading = true
         defer { isLoading = false }
         do {
             let resp = try await api.searchReleases(query: trimmed, page: 0)
+            guard epoch == searchEpoch else { return }
             results = resp.items
             errorMessage = nil
         } catch {
+            guard epoch == searchEpoch else { return }
             errorMessage = error.localizedDescription
         }
     }

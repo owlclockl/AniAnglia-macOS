@@ -30,6 +30,7 @@ final class HomeViewModel: ObservableObject {
 
 struct HomeView: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var auth: AuthStore
     @StateObject private var vm = HomeViewModel()
 
     var body: some View {
@@ -54,7 +55,9 @@ struct HomeView: View {
             .padding(24)
         }
         .navigationTitle("Главная")
-        .task { await vm.load(api: appState.api) }
+        // Reload when the signed-in profile changes (login/logout) so the
+        // personal recommendations section appears/disappears correctly.
+        .task(id: auth.profileId) { await vm.load(api: appState.api) }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

@@ -8,6 +8,7 @@ struct AniAngliaApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                .environmentObject(appState.auth)
                 .frame(minWidth: 900, minHeight: 600)
         }
         .windowStyle(.titleBar)

@@ -46,6 +46,7 @@ final class HistoryViewModel: ObservableObject {
 
 struct HistoryView: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var auth: AuthStore
     @StateObject private var vm = HistoryViewModel()
 
     private let columns = [GridItem(.adaptive(minimum: 160, maximum: 200), spacing: 16)]
@@ -53,7 +54,7 @@ struct HistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if !appState.auth.isAuthenticated {
+                if !auth.isAuthenticated {
                     ContentUnavailable(systemImage: "person.crop.circle.badge.xmark",
                                        title: "Нужен вход",
                                        message: "Войди в аккаунт Anixart, чтобы видеть историю просмотров. Кнопка «Войти» сверху справа.")
@@ -102,8 +103,8 @@ struct HistoryView: View {
                 .disabled(vm.isLoading)
             }
         }
-        .task(id: appState.auth.profileId) {
-            if appState.auth.isAuthenticated && vm.releases.isEmpty {
+        .task(id: auth.profileId) {
+            if auth.isAuthenticated && vm.releases.isEmpty {
                 await vm.reload(api: appState.api)
             }
         }

@@ -7,14 +7,21 @@ final class BookmarksViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var category: Int = 2 // Watching by default
 
+    /// Guards against out-of-order responses when the category is switched quickly.
+    private var loadEpoch = 0
+
     func load(api: AnixartAPI) async {
+        loadEpoch += 1
+        let epoch = loadEpoch
         isLoading = true
         defer { isLoading = false }
         do {
             let resp = try await api.bookmarks(category: category, page: 0)
+            guard epoch == loadEpoch else { return }
             releases = resp.items
             errorMessage = nil
         } catch {
+            guard epoch == loadEpoch else { return }
             errorMessage = error.localizedDescription
         }
     }
@@ -22,6 +29,9 @@ final class BookmarksViewModel: ObservableObject {
 
 struct BookmarksView: View {
     @EnvironmentObject private var appState: AppState
+    // AuthStore is a separate ObservableObject: observing it via @EnvironmentObject
+    // is what makes this view re-render right after login/logout.
+    @EnvironmentObject private var auth: AuthStore
     @StateObject private var vm = BookmarksViewModel()
 
     private let categories: [(Int, String)] = [
@@ -64,7 +74,7 @@ struct BookmarksView: View {
 
     @ViewBuilder
     private var content: some View {
-        if !appState.auth.isAuthenticated {
+        if !auth.isAuthenticated {
             VStack(spacing: 12) {
                 Image(systemName: "person.crop.circle.badge.exclamationmark")
                     .font(.system(size: 36))

@@ -93,6 +93,7 @@ struct EpisodesView: View {
     let releaseTitle: String?
 
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var auth: AuthStore
     @StateObject private var vm: EpisodesViewModel
     @State private var playing: Episode?
 
@@ -114,7 +115,7 @@ struct EpisodesView: View {
         .task { await vm.loadTypes(api: appState.api) }
         .sheet(item: $playing) { episode in
             EpisodePlayerSheet(episode: episode, releaseTitle: releaseTitle, onClosed: {
-                if appState.auth.isAuthenticated && !vm.isWatched(episode) {
+                if auth.isAuthenticated && !vm.isWatched(episode) {
                     Task { await vm.toggleWatched(episode, api: appState.api) }
                 }
             })
@@ -214,7 +215,7 @@ struct EpisodesView: View {
                         EpisodeRow(
                             episode: episode,
                             isWatched: vm.isWatched(episode),
-                            canMark: appState.auth.isAuthenticated,
+                            canMark: auth.isAuthenticated,
                             onPlay: { playing = episode },
                             onToggleWatched: {
                                 Task { await vm.toggleWatched(episode, api: appState.api) }
